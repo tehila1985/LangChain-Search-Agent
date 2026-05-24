@@ -47,7 +47,12 @@ def agent_node(state):
 def summarizer_node(state):
     approved = state.get("sources", [])
     sources_text = "\n\n".join([f"{s['title']}\n{s['content']}" for s in approved])
-    prompt = f"להלן מקורות מידע שנאספו מהאינטרנט. כתוב סיכום מקצועי וקולע בעברית על בסיסם:\n\n{sources_text}"
+    prompt = f"""להלן מקורות מידע שנאספו מהאינטרנט.
+כתוב סיכום מקצועי בעברית בפסקאות קצרות וקריאות.
+הסיכום יכיל כותרת פתיחה, אחריה פסקאות רגילות, ובמקומות רלוונטיים בלבד הוסף נקודה אחת או שתיים עם אימוג'י מתאים.
+אל תגזים בשימוש באימוג'ים או בנקודות.
+
+{sources_text}"""
     response = llm.invoke(prompt)
     return {"final_summary": response.content}
 
@@ -117,7 +122,10 @@ elif st.session_state.stage == "review":
 # --- Stage: summary ---
 elif st.session_state.stage == "summary":
     st.subheader("📝 סיכום")
-    st.write(st.session_state.summary)
+    st.markdown(
+        f"<div style='direction:rtl; text-align:right; line-height:2'>{st.session_state.summary.replace(chr(10), '<br>')}</div>",
+        unsafe_allow_html=True
+    )
     if st.button("🔄 חיפוש חדש"):
         for key in ["stage", "sources", "config", "summary"]:
             del st.session_state[key]
