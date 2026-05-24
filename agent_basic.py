@@ -1,5 +1,4 @@
 import os
-import ssl
 import httpx
 import requests
 from dotenv import load_dotenv
@@ -9,7 +8,6 @@ from langchain.agents import create_agent
 
 load_dotenv()
 
-# הכלי שלנו (נשאר אותו דבר)
 def tavily_search_tool(query):
     url = "https://api.tavily.com/search"
     payload = {"api_key": os.getenv("TAVILY_API_KEY"), "query": query, "search_depth": "advanced"}
@@ -23,13 +21,14 @@ def tavily_search(query: str) -> str:
 
 tools = [tavily_search]
 
-# הגדרת המוח (LLM) עם Cohere — SSL disabled בגלל בעיית certificates
 llm = ChatCohere(model="command-r-plus-08-2024")
 llm.client.v2._raw_client._client_wrapper.httpx_client.httpx_client = httpx.Client(verify=False)
 
-# יצירת ה-Agent
-agent = create_agent(llm, tools)
+SYSTEM_PROMPT = """You are a research agent. Your job is to collect information sources from the internet on the topic the user requests.
+Run several diverse searches to cover the topic from different angles.
+Return a list of relevant sources with a title, link, and short summary for each."""
 
-# הרצה
-response = agent.invoke({"messages": [{"role": "user", "content": "ספרי לי על היתרונות של NotebookLM"}]})
+agent = create_agent(llm, tools, system_prompt=SYSTEM_PROMPT)
+
+response = agent.invoke({"messages": [{"role": "user", "content": "Tell me about the advantages of NotebookLM"}]})
 print(response["messages"][-1].content)
